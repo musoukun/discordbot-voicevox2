@@ -12,7 +12,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@discordjs/voice": "^0.17.0",
+		"@discordjs/voice": "^0.19.1",
 		"libsodium-wrappers": "^0.7.15",
 		"opusscript": "^0.0.8",
 		"@google/genai": "^1.22.0",

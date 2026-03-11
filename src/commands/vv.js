@@ -5,7 +5,9 @@ import { ChannelType, MessageFlags } from "discord.js";
 export async function handleVV(interaction) {
 	try {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-	} catch {
+		console.log("[VV] deferReply succeeded");
+	} catch (e) {
+		console.log(`[VV] deferReply failed: ${e.code}, forcing deferred state`);
 		interaction.deferred = true;
 	}
 
@@ -32,11 +34,21 @@ export async function handleVV(interaction) {
 		volume: interaction.options.getNumber("volume"),
 	};
 
+	console.log("[VV] Connecting to voice channel...");
 	const connection = connectToVoice(interaction.guild, voiceChannel);
+	console.log(`[VV] Connection state: ${connection.state.status}`);
+
 	await playInChannel(connection, text, speakerName, options);
+	console.log("[VV] playInChannel completed");
+
 	setDisconnectTimeout(connection);
 
-	await interaction.editReply({
-		content: `読み上げ開始: 話者=${speakerName}, 速度=${options.speed ?? 1.0}, 音高=${options.pitch ?? 0}, 抑揚=${options.intonation ?? 1.0}, 音量=${options.volume ?? 1.0}`,
-	});
+	try {
+		await interaction.editReply({
+			content: `読み上げ開始: 話者=${speakerName}, 速度=${options.speed ?? 1.0}, 音高=${options.pitch ?? 0}, 抑揚=${options.intonation ?? 1.0}, 音量=${options.volume ?? 1.0}`,
+		});
+		console.log("[VV] editReply succeeded");
+	} catch (e) {
+		console.log(`[VV] editReply failed: ${e.code || e.message}`);
+	}
 }
