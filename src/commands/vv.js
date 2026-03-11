@@ -3,7 +3,11 @@ import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../se
 import { ChannelType, MessageFlags } from "discord.js";
 
 export async function handleVV(interaction) {
-	await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+	try {
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+	} catch {
+		// already acknowledged - continue with editReply
+	}
 
 	const text = interaction.options.getString("text");
 	let speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
