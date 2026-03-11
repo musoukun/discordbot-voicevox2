@@ -1,13 +1,13 @@
-import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import { existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import "dotenv/config";
 
 import { deployCommands } from "./deploy-commands.js";
-import { vvCommand, handleVV } from "./commands/vv.js";
-import { vvaiCommand, handleVVAI } from "./commands/vvai.js";
-import { lvvCommand, handleLVV } from "./commands/lvv.js";
+import { handleVV } from "./commands/vv.js";
+import { handleVVAI } from "./commands/vvai.js";
+import { handleLVV } from "./commands/lvv.js";
 import { fetchVoicevoxSpeakers, getSpeakers } from "./services/voicevox.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
