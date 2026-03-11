@@ -25,8 +25,8 @@ export async function safeDeferReply(interaction, secret = false) {
  */
 export async function safeReply(interaction, method, content) {
 	if (method === "followUp") {
-		// editReply で ephemeral な応答を消す
-		await interaction.editReply({ content: "⠀" }).catch(() => {});
+		// ephemeral な auto-acknowledge を最小化
+		await interaction.editReply({ content: "✅" }).catch(() => {});
 		return interaction.followUp({ content });
 	}
 	return interaction.editReply({ content });
