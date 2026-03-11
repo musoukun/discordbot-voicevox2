@@ -8,6 +8,7 @@ import { deployCommands } from "./deploy-commands.js";
 import { handleVV } from "./commands/vv.js";
 import { handleVVAI } from "./commands/vvai.js";
 import { handleLVV } from "./commands/lvv.js";
+import { handleVVAIQ } from "./commands/vvaiq.js";
 import { fetchVoicevoxSpeakers, getSpeakers } from "./services/voicevox.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -64,6 +65,9 @@ client.on("interactionCreate", async (interaction) => {
 				break;
 			case "vvai":
 				await handleVVAI(interaction);
+				break;
+			case "vvaiq":
+				await handleVVAIQ(interaction);
 				break;
 			case "lvv":
 				await handleLVV(interaction);

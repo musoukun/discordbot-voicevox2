@@ -89,6 +89,24 @@ export async function deployCommands(speakers = []) {
 				o.setName("search").setDescription("Google検索を使用するか")
 			),
 
+		// /vvaiq - ローカルAI質問 + 読み上げ
+		new SlashCommandBuilder()
+			.setName("vvaiq")
+			.setDescription("ローカルAI（Qwen）に質問し、VOICEVOXの声で回答を読み上げます")
+			.addStringOption((o) =>
+				o.setName("question").setDescription("AIへの質問").setRequired(true)
+			)
+			.addStringOption((o) => {
+				o.setName("speaker").setDescription("VOICEVOXの話者");
+				if (speakerChoices.length > 0) {
+					o.addChoices(...speakerChoices);
+				}
+				return o;
+			})
+			.addStringOption((o) =>
+				o.setName("channelid").setDescription("ボイスチャンネルのID（省略可能）")
+			),
+
 		// /lvv - 退出
 		new SlashCommandBuilder()
 			.setName("lvv")
