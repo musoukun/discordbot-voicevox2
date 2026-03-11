@@ -41,7 +41,7 @@ export async function generateAIResponse(question, userId, useSearch = false) {
 	if (useSearch) {
 		// Google検索付きモード
 		const response = await ai.models.generateContent({
-			model: "gemini-2.0-flash",
+			model: "gemini-2.5-flash",
 			contents: `${question}\n\n${SEARCH_PROMPT}`,
 			config: {
 				tools: [{ googleSearch: {} }],
@@ -54,7 +54,7 @@ export async function generateAIResponse(question, userId, useSearch = false) {
 		const systemInstruction = `${SYSTEM_PROMPT}\n現在の時刻: ${now}`;
 
 		const response = await ai.models.generateContent({
-			model: "gemini-2.0-flash",
+			model: "gemini-2.5-flash",
 			contents: [
 				...history,
 				{ role: "user", parts: [{ text: question }] },
