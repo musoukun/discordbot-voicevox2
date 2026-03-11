@@ -12,7 +12,6 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@discordjs/opus": "^0.10.0",
 		"@discordjs/voice": "^0.17.0",
 		"libsodium-wrappers": "^0.7.15",
 		"opusscript": "^0.0.8",
