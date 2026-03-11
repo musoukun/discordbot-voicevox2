@@ -32,6 +32,6 @@ export async function handleVV(interaction, { secret = false } = {}) {
 	setDisconnectTimeout(connection);
 
 	await safeReply(interaction, method,
-		`読み上げ開始: 話者=${speakerName}, 速度=${options.speed ?? 1.0}, 音高=${options.pitch ?? 0}, 抑揚=${options.intonation ?? 1.0}, 音量=${options.volume ?? 1.0}`
+		`読み上げメッセージ: ${text}\n話者: ${speakerName}`
 	);
 }
