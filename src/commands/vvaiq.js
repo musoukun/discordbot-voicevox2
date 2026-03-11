@@ -4,11 +4,7 @@ import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../se
 import { ChannelType, MessageFlags } from "discord.js";
 
 export async function handleVVAIQ(interaction) {
-	try {
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-	} catch {
-		interaction.deferred = true;
-	}
+	interaction.deferred = true;
 
 	const question = interaction.options.getString("question");
 	const speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";

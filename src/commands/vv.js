@@ -3,13 +3,7 @@ import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../se
 import { ChannelType, MessageFlags } from "discord.js";
 
 export async function handleVV(interaction) {
-	try {
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-		console.log("[VV] deferReply succeeded");
-	} catch (e) {
-		console.log(`[VV] deferReply failed: ${e.code}, forcing deferred state`);
-		interaction.deferred = true;
-	}
+	interaction.deferred = true;
 
 	const text = interaction.options.getString("text");
 	let speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
