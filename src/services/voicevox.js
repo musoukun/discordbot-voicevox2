@@ -6,8 +6,6 @@ import {
 	createAudioResource,
 	NoSubscriberBehavior,
 	AudioPlayerStatus,
-	VoiceConnectionStatus,
-	entersState,
 } from "@discordjs/voice";
 import { voiceTmpPath } from "../index.js";
 
@@ -77,7 +75,7 @@ export function findSpeaker(name) {
 
 export function createPlayer() {
 	return createAudioPlayer({
-		behaviors: { noSubscriber: NoSubscriberBehavior.Play },
+		behaviors: { noSubscriber: NoSubscriberBehavior.Pause },
 	});
 }
 
@@ -90,21 +88,8 @@ export async function playInChannel(connection, text, speakerName, options = {})
 		throw new Error(`話者「${speakerName}」が見つかりません。`);
 	}
 
-	// 接続状態を確認・待機
-	console.log(`[Voice] Connection status: ${connection.state.status}`);
-	if (connection.state.status !== VoiceConnectionStatus.Ready) {
-		console.log("[Voice] Waiting for connection to be ready...");
-		try {
-			await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
-			console.log("[Voice] Connection is now ready.");
-		} catch {
-			throw new Error("ボイスチャンネルへの接続がタイムアウトしました。");
-		}
-	}
-
 	const player = createPlayer();
-	const subscription = connection.subscribe(player);
-	console.log(`[Voice] Player subscribed: ${!!subscription}`);
+	connection.subscribe(player);
 
 	const { tempFilePath, resource } = await generateAudio(
 		text,
@@ -112,24 +97,16 @@ export async function playInChannel(connection, text, speakerName, options = {})
 		options
 	);
 
-	// プレイヤーの状態変化を監視
-	player.on("stateChange", (oldState, newState) => {
-		console.log(`[Player] State: ${oldState.status} -> ${newState.status}`);
-	});
+	player.play(resource);
 
 	player.on("error", (error) => {
 		console.error("[Player] Error:", error.message);
-		console.error("[Player] Resource:", error.resource?.metadata);
 	});
 
-	player.play(resource);
-	console.log(`[Player] play() called, status: ${player.state.status}`);
-
-	// 再生完了後に一時ファイル削除
 	player.on(AudioPlayerStatus.Idle, () => {
-		console.log("[Player] Playback finished, cleaning up temp file.");
 		try {
 			unlinkSync(tempFilePath);
+			console.log(`Temporary file ${tempFilePath} has been deleted.`);
 		} catch (err) {
 			console.error(`Error deleting temp file: ${err.message}`);
 		}

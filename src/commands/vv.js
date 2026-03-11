@@ -1,9 +1,9 @@
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
-import { ChannelType } from "discord.js";
+import { ChannelType, MessageFlags } from "discord.js";
 
 export async function handleVV(interaction) {
-	await interaction.deferReply({ ephemeral: true });
+	await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 	const text = interaction.options.getString("text");
 	let speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";

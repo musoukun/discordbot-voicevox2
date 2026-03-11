@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, MessageFlags } from "discord.js";
 import { existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -51,7 +51,7 @@ client.on("interactionCreate", async (interaction) => {
 	if (interactionQueue.has(userId)) {
 		await interaction.reply({
 			content: "前回のコマンドの処理が完了するまでお待ちください。",
-			ephemeral: true,
+			flags: MessageFlags.Ephemeral,
 		});
 		return;
 	}
@@ -75,7 +75,7 @@ client.on("interactionCreate", async (interaction) => {
 			default:
 				await interaction.reply({
 					content: "不明なコマンドです。",
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 		}
 	} catch (error) {
@@ -85,7 +85,7 @@ client.on("interactionCreate", async (interaction) => {
 			: interaction.reply.bind(interaction);
 		await reply({
 			content: "コマンドの実行中にエラーが発生しました。",
-			ephemeral: true,
+			flags: MessageFlags.Ephemeral,
 		}).catch(console.error);
 	} finally {
 		interactionQueue.delete(userId);

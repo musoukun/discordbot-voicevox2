@@ -1,10 +1,10 @@
 import { generateAIResponse } from "../services/ai.js";
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
-import { ChannelType } from "discord.js";
+import { ChannelType, MessageFlags } from "discord.js";
 
 export async function handleVVAI(interaction) {
-	await interaction.deferReply({ ephemeral: true });
+	await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 	const question = interaction.options.getString("question");
 	const speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
@@ -23,10 +23,6 @@ export async function handleVVAI(interaction) {
 		});
 		return;
 	}
-
-	await interaction.editReply({
-		content: `質問を処理中...\n質問: ${question}\n検索: ${useSearch ? "有効" : "無効"}`,
-	});
 
 	// AI応答生成
 	let responseText;

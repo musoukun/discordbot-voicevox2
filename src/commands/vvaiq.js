@@ -1,10 +1,10 @@
 import { generateLocalAIResponse } from "../services/local-ai.js";
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
-import { ChannelType } from "discord.js";
+import { ChannelType, MessageFlags } from "discord.js";
 
 export async function handleVVAIQ(interaction) {
-	await interaction.deferReply({ ephemeral: true });
+	await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 	const question = interaction.options.getString("question");
 	const speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
@@ -22,10 +22,6 @@ export async function handleVVAIQ(interaction) {
 		});
 		return;
 	}
-
-	await interaction.editReply({
-		content: `ローカルAIで処理中...\n質問: ${question}`,
-	});
 
 	// ローカルAI応答生成
 	let responseText;

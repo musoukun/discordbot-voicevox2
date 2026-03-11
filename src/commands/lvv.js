@@ -1,9 +1,10 @@
 import { disconnectVoice } from "../services/voice.js";
+import { MessageFlags } from "discord.js";
 
 export async function handleLVV(interaction) {
 	const guild = interaction.guild;
 	if (!guild) {
-		await interaction.reply({ content: "このコマンドはサーバー内でのみ使用できます。", ephemeral: true });
+		await interaction.reply({ content: "このコマンドはサーバー内でのみ使用できます。", flags: MessageFlags.Ephemeral });
 		return;
 	}
 
@@ -12,6 +13,6 @@ export async function handleLVV(interaction) {
 		content: disconnected
 			? "ボイスチャンネルから退出しました。"
 			: "ボイスチャンネルに接続していません。",
-		ephemeral: true,
+		flags: MessageFlags.Ephemeral,
 	});
 }
