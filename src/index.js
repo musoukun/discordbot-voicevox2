@@ -22,6 +22,7 @@ const interactionQueue = new Set();
 
 const client = new Client({
 	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+	rest: { retries: 0 },
 });
 
 client.once("ready", async () => {
