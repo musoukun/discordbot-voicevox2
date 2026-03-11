@@ -44,8 +44,6 @@ client.once("ready", async () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-	console.log(`[Interaction] type=${interaction.type} isCommand=${interaction.isCommand()} isChatInputCommand=${interaction.isChatInputCommand()} commandName=${interaction.commandName ?? "N/A"} replied=${interaction.replied} deferred=${interaction.deferred}`);
-
 	if (!interaction.isChatInputCommand()) return;
 
 	const userId = interaction.user.id;
@@ -61,16 +59,21 @@ client.on("interactionCreate", async (interaction) => {
 
 	interactionQueue.add(userId);
 
+	// "s" 付きコマンドは自分のみ表示
+	const name = interaction.commandName;
+	const secret = name.endsWith("s") && name !== "lvv";
+	const baseName = secret ? name.slice(0, -1) : name;
+
 	try {
-		switch (interaction.commandName) {
+		switch (baseName) {
 			case "vv":
-				await handleVV(interaction);
+				await handleVV(interaction, { secret });
 				break;
 			case "vvai":
-				await handleVVAI(interaction);
+				await handleVVAI(interaction, { secret });
 				break;
 			case "vvaiq":
-				await handleVVAIQ(interaction);
+				await handleVVAIQ(interaction, { secret });
 				break;
 			case "lvv":
 				await handleLVV(interaction);
@@ -82,7 +85,7 @@ client.on("interactionCreate", async (interaction) => {
 				});
 		}
 	} catch (error) {
-		console.error(`Error executing /${interaction.commandName}:`, error);
+		console.error(`Error executing /${name}:`, error);
 		try {
 			await interaction.editReply({ content: "コマンドの実行中にエラーが発生しました。" });
 		} catch {

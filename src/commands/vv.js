@@ -1,9 +1,10 @@
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
 import { ChannelType, MessageFlags } from "discord.js";
+import { safeDeferReply } from "../utils.js";
 
-export async function handleVV(interaction) {
-	interaction.deferred = true;
+export async function handleVV(interaction, { secret = false } = {}) {
+	await safeDeferReply(interaction, secret);
 
 	const text = interaction.options.getString("text");
 	let speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
@@ -28,21 +29,11 @@ export async function handleVV(interaction) {
 		volume: interaction.options.getNumber("volume"),
 	};
 
-	console.log("[VV] Connecting to voice channel...");
 	const connection = connectToVoice(interaction.guild, voiceChannel);
-	console.log(`[VV] Connection state: ${connection.state.status}`);
-
 	await playInChannel(connection, text, speakerName, options);
-	console.log("[VV] playInChannel completed");
-
 	setDisconnectTimeout(connection);
 
-	try {
-		await interaction.editReply({
-			content: `読み上げ開始: 話者=${speakerName}, 速度=${options.speed ?? 1.0}, 音高=${options.pitch ?? 0}, 抑揚=${options.intonation ?? 1.0}, 音量=${options.volume ?? 1.0}`,
-		});
-		console.log("[VV] editReply succeeded");
-	} catch (e) {
-		console.log(`[VV] editReply failed: ${e.code || e.message}`);
-	}
+	await interaction.editReply({
+		content: `読み上げ開始: 話者=${speakerName}, 速度=${options.speed ?? 1.0}, 音高=${options.pitch ?? 0}, 抑揚=${options.intonation ?? 1.0}, 音量=${options.volume ?? 1.0}`,
+	});
 }

@@ -1,10 +1,11 @@
 import { generateAIResponse } from "../services/ai.js";
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
-import { ChannelType, MessageFlags } from "discord.js";
+import { ChannelType } from "discord.js";
+import { safeDeferReply } from "../utils.js";
 
-export async function handleVVAI(interaction) {
-	interaction.deferred = true;
+export async function handleVVAI(interaction, { secret = false } = {}) {
+	await safeDeferReply(interaction, secret);
 
 	const question = interaction.options.getString("question");
 	const speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
