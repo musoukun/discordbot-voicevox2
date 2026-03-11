@@ -6,7 +6,7 @@ export async function handleVV(interaction) {
 	try {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 	} catch {
-		// already acknowledged - continue with editReply
+		interaction.deferred = true;
 	}
 
 	const text = interaction.options.getString("text");

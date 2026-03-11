@@ -83,13 +83,14 @@ client.on("interactionCreate", async (interaction) => {
 		}
 	} catch (error) {
 		console.error(`Error executing /${interaction.commandName}:`, error);
-		const reply = interaction.deferred || interaction.replied
-			? interaction.editReply.bind(interaction)
-			: interaction.reply.bind(interaction);
-		await reply({
-			content: "コマンドの実行中にエラーが発生しました。",
-			flags: MessageFlags.Ephemeral,
-		}).catch(console.error);
+		try {
+			await interaction.editReply({ content: "コマンドの実行中にエラーが発生しました。" });
+		} catch {
+			await interaction.reply({
+				content: "コマンドの実行中にエラーが発生しました。",
+				flags: MessageFlags.Ephemeral,
+			}).catch(console.error);
+		}
 	} finally {
 		interactionQueue.delete(userId);
 	}

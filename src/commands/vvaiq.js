@@ -7,7 +7,7 @@ export async function handleVVAIQ(interaction) {
 	try {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 	} catch {
-		// already acknowledged - continue with editReply
+		interaction.deferred = true;
 	}
 
 	const question = interaction.options.getString("question");
