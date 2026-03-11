@@ -98,14 +98,24 @@ export async function deployCommands(speakers = []) {
 	const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 	try {
-		console.log("Registering slash commands...");
-		await rest.put(
-			Routes.applicationGuildCommands(
-				process.env.DISCORD_APPLICATION_ID,
-				process.env.DISCORD_GUILD_ID
-			),
-			{ body: commands }
-		);
+		const appId = process.env.DISCORD_APPLICATION_ID;
+		const guildId = process.env.DISCORD_GUILD_ID;
+
+		if (guildId) {
+			// ギルドコマンド（即反映、テスト用）
+			console.log(`Registering guild commands for ${guildId}...`);
+			await rest.put(
+				Routes.applicationGuildCommands(appId, guildId),
+				{ body: commands }
+			);
+		} else {
+			// グローバルコマンド（全サーバー、反映に最大1時間）
+			console.log("Registering global commands...");
+			await rest.put(
+				Routes.applicationCommands(appId),
+				{ body: commands }
+			);
+		}
 		console.log("Slash commands registered.");
 	} catch (error) {
 		console.error("Failed to register commands:", error);
