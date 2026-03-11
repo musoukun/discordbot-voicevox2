@@ -43,7 +43,7 @@ export async function handleVVAIQ(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	await safeReply(interaction, method,
-		`質問: ${question}\n\nAIの回答 (ローカル Qwen):\n${responseText}\n\n話者: ${speakerName}`
-	);
+	const publicContent = `質問: ${question}\n\nAIの回答 (ローカル Qwen):\n${responseText}\n\n話者: ${speakerName}`;
+	const statusInfo = `読み上げ開始: 話者=${speakerName} (ローカルAI)`;
+	await safeReply(interaction, method, publicContent, { ephemeralContent: statusInfo });
 }

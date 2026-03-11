@@ -23,10 +23,10 @@ export async function safeDeferReply(interaction, secret = false) {
  * safeDeferReply の結果に応じて返信する。
  * method="editReply" なら editReply、"followUp" なら followUp を使う。
  */
-export async function safeReply(interaction, method, content) {
+export async function safeReply(interaction, method, content, { ephemeralContent } = {}) {
 	if (method === "followUp") {
-		// ephemeral な auto-acknowledge を最小化
-		await interaction.editReply({ content: "✅" }).catch(() => {});
+		// ephemeral に詳細情報、公開に本文
+		await interaction.editReply({ content: ephemeralContent || content }).catch(() => {});
 		return interaction.followUp({ content });
 	}
 	return interaction.editReply({ content });

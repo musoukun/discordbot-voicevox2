@@ -44,7 +44,7 @@ export async function handleVVAI(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	await safeReply(interaction, method,
-		`質問: ${question}\n\nAIの回答:\n${responseText}\n\n話者: ${speakerName}${useSearch ? "\n(Google検索で補完)" : ""}`
-	);
+	const publicContent = `質問: ${question}\n\nAIの回答:\n${responseText}\n\n話者: ${speakerName}${useSearch ? "\n(Google検索で補完)" : ""}`;
+	const statusInfo = `読み上げ開始: 話者=${speakerName}${useSearch ? ", 検索=有効" : ""}`;
+	await safeReply(interaction, method, publicContent, { ephemeralContent: statusInfo });
 }
