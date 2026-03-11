@@ -1,11 +1,13 @@
 import axios from "axios";
 import { join } from "path";
-import { writeFileSync, unlinkSync } from "fs";
+import { writeFileSync, unlinkSync, statSync } from "fs";
 import {
 	createAudioPlayer,
 	createAudioResource,
 	NoSubscriberBehavior,
 	AudioPlayerStatus,
+	VoiceConnectionStatus,
+	entersState,
 } from "@discordjs/voice";
 import { voiceTmpPath } from "../index.js";
 
@@ -35,6 +37,8 @@ export async function fetchVoicevoxSpeakers() {
 }
 
 export async function generateAudio(text, speakerId, options = {}) {
+	console.log(`[VOICEVOX] Generating audio: text="${text.substring(0, 30)}...", speaker=${speakerId}`);
+
 	// 音声クエリ生成
 	const { data: query } = await axios.post(
 		`${VOICEVOX_URL}/audio_query`,
@@ -58,7 +62,13 @@ export async function generateAudio(text, speakerId, options = {}) {
 	const tempFilePath = join(voiceTmpPath, `audio_${Date.now()}.wav`);
 	writeFileSync(tempFilePath, Buffer.from(audioData));
 
-	return { tempFilePath, resource: createAudioResource(tempFilePath) };
+	const fileSize = statSync(tempFilePath).size;
+	console.log(`[VOICEVOX] Audio file created: ${tempFilePath} (${fileSize} bytes)`);
+
+	const resource = createAudioResource(tempFilePath);
+	console.log(`[VOICEVOX] Audio resource created, readable=${resource.readable}`);
+
+	return { tempFilePath, resource };
 }
 
 export function findSpeaker(name) {
@@ -67,7 +77,7 @@ export function findSpeaker(name) {
 
 export function createPlayer() {
 	return createAudioPlayer({
-		behaviors: { noSubscriber: NoSubscriberBehavior.Pause },
+		behaviors: { noSubscriber: NoSubscriberBehavior.Play },
 	});
 }
 
@@ -80,8 +90,21 @@ export async function playInChannel(connection, text, speakerName, options = {})
 		throw new Error(`話者「${speakerName}」が見つかりません。`);
 	}
 
+	// 接続状態を確認・待機
+	console.log(`[Voice] Connection status: ${connection.state.status}`);
+	if (connection.state.status !== VoiceConnectionStatus.Ready) {
+		console.log("[Voice] Waiting for connection to be ready...");
+		try {
+			await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+			console.log("[Voice] Connection is now ready.");
+		} catch {
+			throw new Error("ボイスチャンネルへの接続がタイムアウトしました。");
+		}
+	}
+
 	const player = createPlayer();
-	connection.subscribe(player);
+	const subscription = connection.subscribe(player);
+	console.log(`[Voice] Player subscribed: ${!!subscription}`);
 
 	const { tempFilePath, resource } = await generateAudio(
 		text,
@@ -89,19 +112,27 @@ export async function playInChannel(connection, text, speakerName, options = {})
 		options
 	);
 
+	// プレイヤーの状態変化を監視
+	player.on("stateChange", (oldState, newState) => {
+		console.log(`[Player] State: ${oldState.status} -> ${newState.status}`);
+	});
+
+	player.on("error", (error) => {
+		console.error("[Player] Error:", error.message);
+		console.error("[Player] Resource:", error.resource?.metadata);
+	});
+
 	player.play(resource);
+	console.log(`[Player] play() called, status: ${player.state.status}`);
 
 	// 再生完了後に一時ファイル削除
 	player.on(AudioPlayerStatus.Idle, () => {
+		console.log("[Player] Playback finished, cleaning up temp file.");
 		try {
 			unlinkSync(tempFilePath);
 		} catch (err) {
 			console.error(`Error deleting temp file: ${err.message}`);
 		}
-	});
-
-	player.on("error", (error) => {
-		console.error("Audio player error:", error);
 	});
 
 	return player;
