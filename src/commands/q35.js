@@ -2,7 +2,7 @@ import { generateQwenResponse } from "../services/qwen.js";
 import { safeDeferReply, safeReply } from "../utils.js";
 
 export async function handleQ35(interaction, { secret = false } = {}) {
-	await safeDeferReply(interaction, secret);
+	const method = await safeDeferReply(interaction, secret);
 
 	const question = interaction.options.getString("question");
 
@@ -12,14 +12,14 @@ export async function handleQ35(interaction, { secret = false } = {}) {
 		responseText = await generateQwenResponse(question, interaction.user.id);
 	} catch (error) {
 		console.error("Qwen response error:", error);
-		await safeReply(interaction, `Qwenエラー: ${error.message}`);
+		await safeReply(interaction, method, `Qwenエラー: ${error.message}`);
 		return;
 	}
 
 	if (!responseText) {
-		await safeReply(interaction, "回答を生成できませんでした。");
+		await safeReply(interaction, method, "回答を生成できませんでした。");
 		return;
 	}
 
-	await safeReply(interaction, responseText);
+	await safeReply(interaction, method, responseText);
 }

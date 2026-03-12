@@ -4,7 +4,7 @@ import { ChannelType } from "discord.js";
 import { safeDeferReply, safeReply } from "../utils.js";
 
 export async function handleVV(interaction, { secret = false } = {}) {
-	await safeDeferReply(interaction, secret);
+	const method = await safeDeferReply(interaction, secret);
 
 	const text = interaction.options.getString("text");
 	let speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
@@ -16,7 +16,7 @@ export async function handleVV(interaction, { secret = false } = {}) {
 	const voiceChannel = resolveVoiceChannel(interaction, channelId);
 
 	if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
-		await safeReply(interaction, "ボイスチャンネルに入室してから、もう一度コマンドを実行してください。");
+		await safeReply(interaction, method, "ボイスチャンネルに入室してから、もう一度コマンドを実行してください。");
 		return;
 	}
 
@@ -31,5 +31,5 @@ export async function handleVV(interaction, { secret = false } = {}) {
 	await playInChannel(connection, text, speakerName, options);
 	setDisconnectTimeout(connection);
 
-	await safeReply(interaction, `読み上げメッセージ: ${text}\n話者: ${speakerName}`);
+	await safeReply(interaction, method, `読み上げメッセージ: ${text}\n話者: ${speakerName}`);
 }
