@@ -65,7 +65,7 @@ client.on("interactionCreate", async (interaction) => {
 	const secret = name.endsWith("s") && name !== "lvv";
 	const baseName = secret ? name.slice(0, -1) : name;
 
-	console.log(`[DEBUG] commandName="${name}", baseName="${baseName}", secret=${secret}`);
+	console.log(`[DEBUG] commandName="${name}", baseName="${baseName}", secret=${secret}, replied=${interaction.replied}, deferred=${interaction.deferred}`);
 
 	try {
 		switch (baseName) {
