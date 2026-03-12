@@ -85,6 +85,7 @@ client.on("interactionCreate", async (interaction) => {
 				await handleLVV(interaction);
 				break;
 			default:
+				console.log(`[DEBUG] ★★★ default到達! name="${name}", baseName="${baseName}" ★★★`);
 				await interaction.reply({
 					content: "不明なコマンドです。",
 					flags: MessageFlags.Ephemeral,
