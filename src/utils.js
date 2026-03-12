@@ -9,25 +9,16 @@ export async function safeDeferReply(interaction, secret = false) {
 		const options = { content: "処理中..." };
 		if (secret) options.flags = MessageFlags.Ephemeral;
 		await interaction.reply(options);
-		console.log("[safeDeferReply] reply() succeeded");
 		return "editReply";
 	} catch (err) {
-		console.error("[safeDeferReply] reply() failed:", err.code, err.message);
 		if (err.code === 40060) {
-			// 既にacknowledgeされている → 現在の応答内容を確認
+			// 既にacknowledgeされている → editReplyで上書き
 			interaction.replied = true;
 			try {
-				const current = await interaction.fetchReply();
-				console.log("[safeDeferReply] 40060 caught. Current reply content:", JSON.stringify(current.content), "flags:", current.flags?.bitfield);
-			} catch (fetchErr) {
-				console.error("[safeDeferReply] fetchReply failed:", fetchErr.message);
-			}
-			try {
 				await interaction.editReply({ content: "処理中..." });
-				console.log("[safeDeferReply] editReply() succeeded (40060 recovery)");
 				return "editReply";
-			} catch (editErr) {
-				console.error("[safeDeferReply] editReply() also failed:", editErr.code, editErr.message);
+			} catch {
+				// editReplyも失敗
 			}
 		}
 		// 最終フォールバック

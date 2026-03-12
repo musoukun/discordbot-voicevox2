@@ -25,13 +25,6 @@ const client = new Client({
 	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 });
 
-// デバッグ: REST APIリクエストの監視
-client.rest.on("restDebug", (info) => {
-	if (info.includes("interactions") || info.includes("callback")) {
-		console.log("[REST]", info);
-	}
-});
-
 client.once("ready", async () => {
 	console.log(`Ready! Logged in as ${client.user.tag}`);
 
@@ -50,24 +43,7 @@ client.once("ready", async () => {
 	console.log("Bot initialization complete.");
 });
 
-// デバッグ: interactionCreateリスナー数とrawイベント監視
-const seenInteractions = new Set();
-client.on("raw", (packet) => {
-	if (packet.t === "INTERACTION_CREATE") {
-		console.log(`[RAW] INTERACTION_CREATE id=${packet.d.id} type=${packet.d.type} name=${packet.d.data?.name}`);
-	}
-});
-
 client.on("interactionCreate", async (interaction) => {
-	const listenerCount = client.listenerCount("interactionCreate");
-	console.log(`[EVENT] interactionCreate id=${interaction.id} type=${interaction.type} command=${interaction.commandName || "N/A"} listeners=${listenerCount}`);
-	if (seenInteractions.has(interaction.id)) {
-		console.log(`[EVENT] ★ DUPLICATE interaction id=${interaction.id} ★`);
-		return;
-	}
-	seenInteractions.add(interaction.id);
-	// 古いIDを掃除（メモリリーク防止）
-	if (seenInteractions.size > 100) seenInteractions.clear();
 	if (!interaction.isChatInputCommand()) return;
 
 	const userId = interaction.user.id;
@@ -88,8 +64,6 @@ client.on("interactionCreate", async (interaction) => {
 	const secret = name.endsWith("s") && name !== "lvv";
 	const baseName = secret ? name.slice(0, -1) : name;
 
-	console.log(`[DEBUG] commandName="${name}", baseName="${baseName}", secret=${secret}, replied=${interaction.replied}, deferred=${interaction.deferred}`);
-
 	try {
 		switch (baseName) {
 			case "vv":
@@ -108,9 +82,8 @@ client.on("interactionCreate", async (interaction) => {
 				await handleLVV(interaction);
 				break;
 			default:
-				console.log(`[DEBUG] ★★★ default到達! name="${name}", baseName="${baseName}" ★★★`);
 				await interaction.reply({
-					content: "SENTINEL: このメッセージが見えたらdefaultケースです",
+					content: "不明なコマンドです。",
 					flags: MessageFlags.Ephemeral,
 				}).catch(() => {});
 		}
