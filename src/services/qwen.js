@@ -15,17 +15,6 @@ const SYSTEM_PROMPT = `あなたは質問者の質問に日本語でこたえる
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
 質問を繰り返す必要はありません。`;
 
-const SYSTEM_PROMPT_VVQ = `あなたは質問者の質問に日本語でこたえるアシスタントです。
-「了解しました」等の前置きを省き、直接結果だけを回答してください。
-質問を繰り返す必要はありません。
-
-回答が150文字を超える場合は、以下のフォーマットで回答してください：
----要約---
-（140文字以内の要約）
----全文---
-（全文の回答）
-
-回答が150文字以下の場合はそのまま回答してください。フォーマットは不要です。`;
 
 /**
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
@@ -38,35 +27,19 @@ function stripThinkingTags(text) {
 	return result.trim();
 }
 
-/**
- * VVQフォーマットのレスポンスから要約と全文を分離する
- * @returns {{ summary: string, full: string }}
- */
-export function parseVvqResponse(text) {
-	const summaryMatch = text.match(/---要約---\s*([\s\S]*?)\s*---全文---/);
-	if (summaryMatch) {
-		const summary = summaryMatch[1].trim();
-		const full = text.replace(/---要約---[\s\S]*?---全文---\s*/, "").trim();
-		return { summary, full };
-	}
-	// フォーマットなし（150文字以下の場合）→ そのまま使う
-	return { summary: text, full: text };
-}
 
 /**
  * Qwen (KoboldCpp) でAI応答を生成する（OpenAI互換API使用）
  */
-export async function generateQwenResponse(question, userId, { mode = "default" } = {}) {
+export async function generateQwenResponse(question, userId) {
 	if (!chatHistories[userId]) {
 		chatHistories[userId] = [];
 	}
 
 	const history = chatHistories[userId].slice(-10);
 	const now = getFormattedDate();
-	const systemPrompt = mode === "vvq" ? SYSTEM_PROMPT_VVQ : SYSTEM_PROMPT;
-
 	const messages = [
-		{ role: "system", content: `${systemPrompt}\n現在の時刻: ${now}` },
+		{ role: "system", content: `${SYSTEM_PROMPT}\n現在の時刻: ${now}` },
 		...history,
 		{ role: "user", content: question },
 	];
