@@ -16,7 +16,8 @@ const SYSTEM_PROMPT = `あなたは質問者の質問に日本語で簡潔にこ
 わからない場合は「わかりません」と回答してください。
 250文字以上になりそうな場合は簡潔に要約して回答してください。
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
-質問を繰り返す必要はありません。`;
+質問を繰り返す必要はありません。
+/no_think`;
 
 /**
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
@@ -43,7 +44,7 @@ export async function generateQwenResponse(question, userId) {
 	const messages = [
 		{ role: "system", content: `${SYSTEM_PROMPT}\n現在の時刻: ${now}` },
 		...history,
-		{ role: "user", content: `${question} /no_think` },
+		{ role: "user", content: question },
 	];
 
 	try {
