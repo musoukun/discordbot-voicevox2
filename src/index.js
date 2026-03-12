@@ -103,7 +103,7 @@ client.on("interactionCreate", async (interaction) => {
 			default:
 				console.log(`[DEBUG] ★★★ default到達! name="${name}", baseName="${baseName}" ★★★`);
 				await interaction.reply({
-					content: "不明なコマンドです。",
+					content: "SENTINEL: このメッセージが見えたらdefaultケースです",
 					flags: MessageFlags.Ephemeral,
 				}).catch(() => {});
 		}
