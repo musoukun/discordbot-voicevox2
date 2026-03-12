@@ -1,8 +1,10 @@
-import { generateAIResponse } from "../services/ai.js";
+import { generateAIResponse, summarizeText } from "../services/ai.js";
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
 import { ChannelType } from "discord.js";
 import { safeDeferReply, safeReply } from "../utils.js";
+
+const SUMMARY_CHAR_LIMIT = 150;
 
 export async function handleVVAI(interaction, { secret = false } = {}) {
 	const method = await safeDeferReply(interaction, secret);
@@ -23,7 +25,7 @@ export async function handleVVAI(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	// AI応答生成
+	// AI応答生成（全文）
 	let responseText;
 	try {
 		responseText = await generateAIResponse(question, interaction.user.id, useSearch);
@@ -33,10 +35,24 @@ export async function handleVVAI(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	// 音声再生
+	// 読み上げテキストを決定（長い場合は要約を生成）
+	let voiceText = responseText;
+	let summaryText = null;
+	if (responseText.length > SUMMARY_CHAR_LIMIT) {
+		try {
+			summaryText = await summarizeText(responseText);
+			voiceText = summaryText;
+		} catch (error) {
+			console.error("Summary generation error:", error);
+			// 要約失敗時は先頭140文字を使う
+			voiceText = responseText.substring(0, 140);
+		}
+	}
+
+	// 音声再生（要約 or 全文を読み上げ）
 	try {
 		const connection = connectToVoice(interaction.guild, voiceChannel);
-		await playInChannel(connection, responseText, speakerName);
+		await playInChannel(connection, voiceText, speakerName);
 		setDisconnectTimeout(connection);
 	} catch (error) {
 		console.error("Voice playback error:", error);
@@ -44,6 +60,11 @@ export async function handleVVAI(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	const publicContent = `質問: ${question}\n\nAIの回答:\n${responseText}\n\n話者: ${speakerName}${useSearch ? "\n(Google検索で補完)" : ""}`;
+	// 表示内容を構築
+	let publicContent = `質問: ${question}\n\nAIの回答:\n${responseText}`;
+	if (summaryText) {
+		publicContent += `\n\n📝 読み上げ要約:\n${summaryText}`;
+	}
+	publicContent += `\n\n話者: ${speakerName}${useSearch ? "\n(Google検索で補完)" : ""}`;
 	await safeReply(interaction, method, publicContent);
 }

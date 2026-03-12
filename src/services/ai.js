@@ -11,10 +11,7 @@ function getFormattedDate() {
 	return `${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${pad(now.getHours())}時${pad(now.getMinutes())}分`;
 }
 
-const SYSTEM_PROMPT = `あなたは質問者の質問に日本語で簡潔にこたえるアシスタントです。
-質問内容は要約して250文字以内で回答してください。
-わからない場合は「わかりません」と回答してください。
-250文字以上になりそうな場合は簡潔に要約して回答してください。
+const SYSTEM_PROMPT = `あなたは質問者の質問に日本語でこたえるアシスタントです。
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
 質問を繰り返す必要はありません。`;
 
@@ -72,4 +69,18 @@ export async function generateAIResponse(question, userId, useSearch = false) {
 
 	console.log(`AI response for ${userId}: "${String(responseText).substring(0, 80)}..."`);
 	return responseText;
+}
+
+/**
+ * テキストを平易な言葉で140文字以内に要約する
+ */
+export async function summarizeText(text) {
+	const response = await ai.models.generateContent({
+		model: "gemini-2.5-flash",
+		contents: `以下の文章を、専門家でない人にもわかるように平易な言葉で140文字以内に要約してください。\n\n${text}`,
+		config: {
+			systemInstruction: "要約だけを出力してください。前置きや説明は不要です。",
+		},
+	});
+	return response.text;
 }
