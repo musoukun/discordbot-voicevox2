@@ -82,14 +82,14 @@ export async function deployCommands(speakers = []) {
 			{ withCustomSpeaker: true }
 		),
 
-		// /vvai - AI質問 + 読み上げ（公開）
+		// /vvg - Gemini AI質問 + 読み上げ（公開）
 		buildVVAIOptions(
-			new SlashCommandBuilder().setName("vvai").setDescription("AIに質問し、VOICEVOXで読み上げます"),
+			new SlashCommandBuilder().setName("vvg").setDescription("Gemini 2.5 Flashに質問し、VOICEVOXで読み上げます"),
 			{ withSearch: true }
 		),
-		// /vvais - AI質問 + 読み上げ（自分のみ表示）
+		// /vvgs - Gemini AI質問 + 読み上げ（自分のみ表示）
 		buildVVAIOptions(
-			new SlashCommandBuilder().setName("vvais").setDescription("AIに質問し、VOICEVOXで読み上げます（自分のみ表示）"),
+			new SlashCommandBuilder().setName("vvgs").setDescription("Gemini 2.5 Flashに質問し、VOICEVOXで読み上げます（自分のみ表示）"),
 			{ withSearch: true }
 		),
 

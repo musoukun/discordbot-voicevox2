@@ -6,7 +6,7 @@ import { safeDeferReply, safeReply } from "../utils.js";
 
 const SUMMARY_CHAR_LIMIT = 150;
 
-export async function handleVVAI(interaction, { secret = false } = {}) {
+export async function handleVVG(interaction, { secret = false } = {}) {
 	const method = await safeDeferReply(interaction, secret);
 
 	const question = interaction.options.getString("question");

@@ -6,7 +6,7 @@ import "dotenv/config";
 
 import { deployCommands } from "./deploy-commands.js";
 import { handleVV } from "./commands/vv.js";
-import { handleVVAI } from "./commands/vvai.js";
+import { handleVVG } from "./commands/vvg.js";
 import { handleLVV } from "./commands/lvv.js";
 import { handleVVQ } from "./commands/vvq.js";
 import { handleQ35 } from "./commands/q35.js";
@@ -69,8 +69,8 @@ client.on("interactionCreate", async (interaction) => {
 			case "vv":
 				await handleVV(interaction, { secret });
 				break;
-			case "vvai":
-				await handleVVAI(interaction, { secret });
+			case "vvg":
+				await handleVVG(interaction, { secret });
 				break;
 			case "vvq":
 				await handleVVQ(interaction, { secret });
