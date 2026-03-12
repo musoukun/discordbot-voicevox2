@@ -16,5 +16,10 @@ export async function handleQ35(interaction, { secret = false } = {}) {
 		return;
 	}
 
+	if (!responseText) {
+		await safeReply(interaction, method, "回答を生成できませんでした。");
+		return;
+	}
+
 	await safeReply(interaction, method, responseText);
 }

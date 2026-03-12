@@ -54,7 +54,7 @@ client.on("interactionCreate", async (interaction) => {
 		await interaction.reply({
 			content: "前回のコマンドの処理が完了するまでお待ちください。",
 			flags: MessageFlags.Ephemeral,
-		});
+		}).catch(() => {});
 		return;
 	}
 
@@ -86,7 +86,7 @@ client.on("interactionCreate", async (interaction) => {
 				await interaction.reply({
 					content: "不明なコマンドです。",
 					flags: MessageFlags.Ephemeral,
-				});
+				}).catch(() => {});
 		}
 	} catch (error) {
 		console.error(`Error executing /${name}:`, error);
