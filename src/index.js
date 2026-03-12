@@ -25,6 +25,13 @@ const client = new Client({
 	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 });
 
+// デバッグ: REST APIリクエストの監視
+client.rest.on("restDebug", (info) => {
+	if (info.includes("interactions") || info.includes("callback")) {
+		console.log("[REST]", info);
+	}
+});
+
 client.once("ready", async () => {
 	console.log(`Ready! Logged in as ${client.user.tag}`);
 
