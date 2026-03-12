@@ -1,4 +1,4 @@
-import { generateQwenResponse } from "../services/qwen.js";
+import { generateQwenResponse, getQueuePosition } from "../services/qwen.js";
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
 import { ChannelType } from "discord.js";
@@ -22,6 +22,12 @@ export async function handleVVQ(interaction, { secret = false } = {}) {
 	if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
 		await safeReply(interaction, method, "ボイスチャンネルに入室してから、もう一度コマンドを実行してください。");
 		return;
+	}
+
+	// 他のリクエストが処理中なら通知
+	const queue = getQueuePosition();
+	if (queue > 0) {
+		await safeReply(interaction, method, `処理中... (待ち: ${queue}件のリクエストが先に処理されています)`).catch(() => {});
 	}
 
 	// Qwen AI応答生成（全文）

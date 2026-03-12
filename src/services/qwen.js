@@ -2,6 +2,16 @@ import axios from "axios";
 
 const KOBOLD_URL = process.env.KOBOLD_URL || "http://localhost:5001";
 
+// 処理中リクエストの追跡
+let activeRequests = 0;
+
+/**
+ * 現在の待ち状況を返す（0なら待ちなし）
+ */
+export function getQueuePosition() {
+	return activeRequests;
+}
+
 function getFormattedDate() {
 	const now = new Date();
 	const pad = (n) => String(n).padStart(2, "0");
@@ -33,6 +43,7 @@ export async function generateQwenResponse(question, userId) {
 		{ role: "user", content: question },
 	];
 
+	activeRequests++;
 	try {
 		const { data } = await axios.post(
 			`${KOBOLD_URL}/v1/chat/completions`,
@@ -54,5 +65,7 @@ export async function generateQwenResponse(question, userId) {
 			throw new Error("Qwen (KoboldCpp) が起動していません。");
 		}
 		throw error;
+	} finally {
+		activeRequests--;
 	}
 }
