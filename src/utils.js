@@ -14,8 +14,14 @@ export async function safeDeferReply(interaction, secret = false) {
 	} catch (err) {
 		console.error("[safeDeferReply] reply() failed:", err.code, err.message);
 		if (err.code === 40060) {
-			// 既にacknowledgeされている → discord.jsの内部状態を合わせてeditReplyで上書き
+			// 既にacknowledgeされている → 現在の応答内容を確認
 			interaction.replied = true;
+			try {
+				const current = await interaction.fetchReply();
+				console.log("[safeDeferReply] 40060 caught. Current reply content:", JSON.stringify(current.content), "flags:", current.flags?.bitfield);
+			} catch (fetchErr) {
+				console.error("[safeDeferReply] fetchReply failed:", fetchErr.message);
+			}
 			try {
 				await interaction.editReply({ content: "処理中..." });
 				console.log("[safeDeferReply] editReply() succeeded (40060 recovery)");
