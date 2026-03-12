@@ -16,13 +16,18 @@ const SYSTEM_PROMPT = `あなたは質問者の質問に日本語で簡潔にこ
 わからない場合は「わかりません」と回答してください。
 250文字以上になりそうな場合は簡潔に要約して回答してください。
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
-質問を繰り返す必要はありません。`;
+質問を繰り返す必要はありません。
+/no_think`;
 
 /**
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
  */
 function stripThinkingTags(text) {
-	return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+	// 閉じタグありの場合: <think>...</think> を除去
+	let result = text.replace(/<think>[\s\S]*?<\/think>/g, "");
+	// 閉じタグなしの場合: <think>以降をすべて除去
+	result = result.replace(/<think>[\s\S]*/g, "");
+	return result.trim();
 }
 
 /**
@@ -50,7 +55,7 @@ export async function generateQwenResponse(question, userId) {
 				max_tokens: 500,
 				temperature: 0.7,
 			},
-			{ timeout: 60000 }
+			{ timeout: 180000 }
 		);
 
 		const rawText = data.choices[0].message.content;
