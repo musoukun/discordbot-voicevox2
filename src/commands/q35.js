@@ -21,5 +21,10 @@ export async function handleQ35(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	await safeReply(interaction, method, responseText);
+	if (method === "followUp") {
+		await interaction.deleteReply().catch(() => {});
+		await interaction.followUp({ content: responseText });
+	} else {
+		await interaction.editReply({ content: responseText });
+	}
 }
