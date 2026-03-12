@@ -44,6 +44,7 @@ client.once("ready", async () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
+	console.log(`[EVENT] interactionCreate id=${interaction.id} type=${interaction.type} command=${interaction.commandName || "N/A"}`);
 	if (!interaction.isChatInputCommand()) return;
 
 	const userId = interaction.user.id;
