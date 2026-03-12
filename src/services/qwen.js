@@ -89,7 +89,7 @@ export async function generateQwenResponse(question, userId, { mode = "default" 
 				prompt,
 				max_length: 2000,
 				temperature: 0.7,
-				banned_tokens: ["<think>", "</think>"],
+				banned_tokens: [],
 				stop_sequence: ["<|im_end|>", "<|im_start|>"],
 				trim_stop: true,
 			},
