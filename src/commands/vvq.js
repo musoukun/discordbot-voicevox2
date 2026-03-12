@@ -5,20 +5,20 @@ import { ChannelType } from "discord.js";
 import { safeDeferReply, safeReply } from "../utils.js";
 
 export async function handleVVQ(interaction, { secret = false } = {}) {
-	const method = await safeDeferReply(interaction, secret);
+	await safeDeferReply(interaction, secret);
 
 	const question = interaction.options.getString("question");
 	const speakerName = interaction.options.getString("speaker") || "ずんだもん (ノーマル)";
 	const channelId = interaction.options.getString("channelid");
 
 	if (!interaction.guild) {
-		await safeReply(interaction, method, "このコマンドはサーバー内でのみ使用できます。");
+		await safeReply(interaction, "このコマンドはサーバー内でのみ使用できます。");
 		return;
 	}
 
 	const voiceChannel = resolveVoiceChannel(interaction, channelId);
 	if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
-		await safeReply(interaction, method, "ボイスチャンネルに入室してから、もう一度コマンドを実行してください。");
+		await safeReply(interaction, "ボイスチャンネルに入室してから、もう一度コマンドを実行してください。");
 		return;
 	}
 
@@ -28,7 +28,7 @@ export async function handleVVQ(interaction, { secret = false } = {}) {
 		responseText = await generateQwenResponse(question, interaction.user.id);
 	} catch (error) {
 		console.error("Qwen response error:", error);
-		await safeReply(interaction, method, `Qwenエラー: ${error.message}`);
+		await safeReply(interaction, `Qwenエラー: ${error.message}`);
 		return;
 	}
 
@@ -39,11 +39,10 @@ export async function handleVVQ(interaction, { secret = false } = {}) {
 		setDisconnectTimeout(connection);
 	} catch (error) {
 		console.error("Voice playback error:", error);
-		await safeReply(interaction, method, `質問: ${question}\n\nAIの回答:\n${responseText}\n\n⚠ 音声再生中にエラーが発生しました。`);
+		await safeReply(interaction, `質問: ${question}\n\nAIの回答:\n${responseText}\n\n⚠ 音声再生中にエラーが発生しました。`);
 		return;
 	}
 
 	const publicContent = `質問: ${question}\n\nAIの回答 (Qwen3.5):\n${responseText}\n\n話者: ${speakerName}`;
-	const statusInfo = `読み上げ開始: 話者=${speakerName} (Qwen3.5)`;
-	await safeReply(interaction, method, publicContent, { ephemeralContent: statusInfo });
+	await safeReply(interaction, publicContent);
 }

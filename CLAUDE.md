@@ -34,7 +34,7 @@ src/services/
 
 ### Key Patterns
 
-- **deferReply workaround**: `deferReply()` consistently fails with 40060 on this environment. All commands skip `deferReply` and set `interaction.deferred = true` manually, then use `editReply()`.
+- **deferReply workaround**: `deferReply()` が 40060 で失敗することがある（既に acknowledge 済み）。`safeDeferReply()` で try/catch し、失敗時は `interaction.deferred = true` を設定。40060 = 実際には成功しているため、常に `editReply()` で応答する。
 - **Per-user queue**: `interactionQueue` Set in index.js prevents concurrent commands from the same user.
 - **Speaker cache**: VOICEVOX speakers are fetched once on bot ready and reused for command choices.
 - **Auto-disconnect**: Voice connections auto-destroy after 10 minutes (TIMEOUT constant).

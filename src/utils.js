@@ -4,30 +4,22 @@ import { MessageFlags } from "discord.js";
  * deferReply を試行し、失敗時は内部状態を手動設定する。
  * secret=true の場合は ephemeral（自分のみ表示）になる。
  *
- * 公開モード（secret=false）の場合、deferReply失敗時は
- * followUp で公開メッセージを送れるように replyMethod を返す。
+ * 40060 (already acknowledged) の場合、deferReply は実際には成功しているため
+ * editReply でそのまま更新できる。followUp への切り替えは不要。
  */
 export async function safeDeferReply(interaction, secret = false) {
 	try {
 		const options = secret ? { flags: MessageFlags.Ephemeral } : {};
 		await interaction.deferReply(options);
-		return "editReply";
-	} catch {
+	} catch (err) {
+		console.error("deferReply failed:", err.code, err.message);
 		interaction.deferred = true;
-		// auto-acknowledge が ephemeral の場合、公開コマンドは followUp を使う
-		return secret ? "editReply" : "followUp";
 	}
 }
 
 /**
- * safeDeferReply の結果に応じて返信する。
- * method="editReply" なら editReply、"followUp" なら followUp を使う。
+ * deferReply 後の返信。常に editReply を使用する。
  */
-export async function safeReply(interaction, method, content, { ephemeralContent } = {}) {
-	if (method === "followUp") {
-		// ephemeral に詳細情報、公開に本文
-		await interaction.editReply({ content: ephemeralContent || content }).catch(() => {});
-		return interaction.followUp({ content });
-	}
+export async function safeReply(interaction, content) {
 	return interaction.editReply({ content });
 }
