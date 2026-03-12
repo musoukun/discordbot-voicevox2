@@ -1,10 +1,10 @@
-import { generateLocalAIResponse } from "../services/local-ai.js";
+import { generateQwenResponse } from "../services/qwen.js";
 import { playInChannel } from "../services/voicevox.js";
 import { connectToVoice, setDisconnectTimeout, resolveVoiceChannel } from "../services/voice.js";
 import { ChannelType } from "discord.js";
 import { safeDeferReply, safeReply } from "../utils.js";
 
-export async function handleVVAIQ(interaction, { secret = false } = {}) {
+export async function handleVVQ(interaction, { secret = false } = {}) {
 	const method = await safeDeferReply(interaction, secret);
 
 	const question = interaction.options.getString("question");
@@ -22,13 +22,13 @@ export async function handleVVAIQ(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	// ローカルAI応答生成
+	// Qwen AI応答生成
 	let responseText;
 	try {
-		responseText = await generateLocalAIResponse(question, interaction.user.id);
+		responseText = await generateQwenResponse(question, interaction.user.id);
 	} catch (error) {
-		console.error("Local AI response error:", error);
-		await safeReply(interaction, method, `ローカルAIエラー: ${error.message}`);
+		console.error("Qwen response error:", error);
+		await safeReply(interaction, method, `Qwenエラー: ${error.message}`);
 		return;
 	}
 
@@ -43,7 +43,7 @@ export async function handleVVAIQ(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	const publicContent = `質問: ${question}\n\nAIの回答 (ローカル Qwen):\n${responseText}\n\n話者: ${speakerName}`;
-	const statusInfo = `読み上げ開始: 話者=${speakerName} (ローカルAI)`;
+	const publicContent = `質問: ${question}\n\nAIの回答 (Qwen3.5):\n${responseText}\n\n話者: ${speakerName}`;
+	const statusInfo = `読み上げ開始: 話者=${speakerName} (Qwen3.5)`;
 	await safeReply(interaction, method, publicContent, { ephemeralContent: statusInfo });
 }

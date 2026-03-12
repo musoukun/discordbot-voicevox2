@@ -93,14 +93,29 @@ export async function deployCommands(speakers = []) {
 			{ withSearch: true }
 		),
 
-		// /vvaiq - ローカルAI質問 + 読み上げ（公開）
+		// /vvq - Qwen AI質問 + 読み上げ（公開）
 		buildVVAIOptions(
-			new SlashCommandBuilder().setName("vvaiq").setDescription("ローカルAIに質問し、VOICEVOXで読み上げます"),
+			new SlashCommandBuilder().setName("vvq").setDescription("Qwen3.5に質問し、VOICEVOXで読み上げます"),
 		),
-		// /vvaiqs - ローカルAI質問 + 読み上げ（自分のみ表示）
+		// /vvqs - Qwen AI質問 + 読み上げ（自分のみ表示）
 		buildVVAIOptions(
-			new SlashCommandBuilder().setName("vvaiqs").setDescription("ローカルAIに質問し、VOICEVOXで読み上げます（自分のみ表示）"),
+			new SlashCommandBuilder().setName("vvqs").setDescription("Qwen3.5に質問し、VOICEVOXで読み上げます（自分のみ表示）"),
 		),
+
+		// /q35 - Qwen3.5 テキスト回答（公開）
+		new SlashCommandBuilder()
+			.setName("q35")
+			.setDescription("Qwen3.5に質問します（テキスト回答のみ）")
+			.addStringOption((o) =>
+				o.setName("question").setDescription("AIへの質問").setRequired(true)
+			),
+		// /q35s - Qwen3.5 テキスト回答（自分のみ表示）
+		new SlashCommandBuilder()
+			.setName("q35s")
+			.setDescription("Qwen3.5に質問します（テキスト回答のみ、自分のみ表示）")
+			.addStringOption((o) =>
+				o.setName("question").setDescription("AIへの質問").setRequired(true)
+			),
 
 		// /lvv - 退出
 		new SlashCommandBuilder()

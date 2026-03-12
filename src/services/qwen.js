@@ -19,9 +19,16 @@ const SYSTEM_PROMPT = `あなたは質問者の質問に日本語で簡潔にこ
 質問を繰り返す必要はありません。`;
 
 /**
- * ローカルLLM（KoboldAI）でAI応答を生成する
+ * <think>...</think> タグを除去してGenerateされた回答のみを返す
  */
-export async function generateLocalAIResponse(question, userId) {
+function stripThinkingTags(text) {
+	return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+}
+
+/**
+ * Qwen (KoboldCpp) でAI応答を生成する
+ */
+export async function generateQwenResponse(question, userId) {
 	if (!chatHistories[userId]) {
 		chatHistories[userId] = [];
 	}
@@ -46,17 +53,18 @@ export async function generateLocalAIResponse(question, userId) {
 			{ timeout: 60000 }
 		);
 
-		const responseText = data.choices[0].message.content;
+		const rawText = data.choices[0].message.content;
+		const responseText = stripThinkingTags(rawText);
 
-		// 会話履歴を更新
+		// 会話履歴を更新（思考タグ除去済みのテキストを保存）
 		chatHistories[userId].push({ role: "user", content: question });
 		chatHistories[userId].push({ role: "assistant", content: responseText });
 
-		console.log(`Local AI response for ${userId}: "${String(responseText).substring(0, 80)}..."`);
+		console.log(`Qwen response for ${userId}: "${String(responseText).substring(0, 80)}..."`);
 		return responseText;
 	} catch (error) {
 		if (error.code === "ECONNREFUSED") {
-			throw new Error("ローカルAI（KoboldAI）が起動していません。");
+			throw new Error("Qwen (KoboldCpp) が起動していません。");
 		}
 		throw error;
 	}
