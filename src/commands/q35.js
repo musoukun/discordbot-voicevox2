@@ -16,6 +16,5 @@ export async function handleQ35(interaction, { secret = false } = {}) {
 		return;
 	}
 
-	const content = `質問: ${question}\n\nQwen3.5の回答:\n${responseText}`;
-	await safeReply(interaction, method, content);
+	await safeReply(interaction, method, responseText);
 }
