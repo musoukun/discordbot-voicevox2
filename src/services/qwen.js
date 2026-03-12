@@ -11,10 +11,7 @@ function getFormattedDate() {
 	return `${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${pad(now.getHours())}時${pad(now.getMinutes())}分`;
 }
 
-const SYSTEM_PROMPT = `あなたは質問者の質問に日本語で簡潔にこたえるアシスタントです。
-質問内容は要約して250文字以内で回答してください。
-わからない場合は「わかりません」と回答してください。
-250文字以上になりそうな場合は簡潔に要約して回答してください。
+const SYSTEM_PROMPT = `あなたは質問者の質問に日本語でこたえるアシスタントです。
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
 質問を繰り返す必要はありません。
 /no_think`;
