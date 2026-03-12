@@ -16,8 +16,7 @@ const SYSTEM_PROMPT = `あなたは質問者の質問に日本語で簡潔にこ
 わからない場合は「わかりません」と回答してください。
 250文字以上になりそうな場合は簡潔に要約して回答してください。
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
-質問を繰り返す必要はありません。
-/no_think`;
+質問を繰り返す必要はありません。`;
 
 /**
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
@@ -44,7 +43,7 @@ export async function generateQwenResponse(question, userId) {
 	const messages = [
 		{ role: "system", content: `${SYSTEM_PROMPT}\n現在の時刻: ${now}` },
 		...history,
-		{ role: "user", content: question },
+		{ role: "user", content: `${question} /no_think` },
 	];
 
 	try {
@@ -52,7 +51,7 @@ export async function generateQwenResponse(question, userId) {
 			`${KOBOLD_URL}/v1/chat/completions`,
 			{
 				messages,
-				max_tokens: 500,
+				max_tokens: 2000,
 				temperature: 0.7,
 			},
 			{ timeout: 180000 }
