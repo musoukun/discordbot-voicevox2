@@ -2,9 +2,6 @@ import axios from "axios";
 
 const KOBOLD_URL = process.env.KOBOLD_URL || "http://localhost:5001";
 
-// ユーザーごとの会話履歴
-const chatHistories = {};
-
 function getFormattedDate() {
 	const now = new Date();
 	const pad = (n) => String(n).padStart(2, "0");
@@ -14,7 +11,6 @@ function getFormattedDate() {
 const SYSTEM_PROMPT = `あなたは質問者の質問に日本語でこたえるアシスタントです。
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
 質問を繰り返す必要はありません。`;
-
 
 /**
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
@@ -27,20 +23,13 @@ function stripThinkingTags(text) {
 	return result.trim();
 }
 
-
 /**
- * Qwen (KoboldCpp) でAI応答を生成する（OpenAI互換API使用）
+ * Qwen (KoboldCpp) でAI応答を生成する（毎回独立した質問として処理）
  */
 export async function generateQwenResponse(question, userId) {
-	if (!chatHistories[userId]) {
-		chatHistories[userId] = [];
-	}
-
-	const history = chatHistories[userId].slice(-10);
 	const now = getFormattedDate();
 	const messages = [
 		{ role: "system", content: `${SYSTEM_PROMPT}\n現在の時刻: ${now}` },
-		...history,
 		{ role: "user", content: question },
 	];
 
@@ -57,10 +46,6 @@ export async function generateQwenResponse(question, userId) {
 
 		const rawText = data.choices[0].message.content;
 		const responseText = stripThinkingTags(rawText);
-
-		// 会話履歴を更新（思考タグ除去済みのテキストを保存）
-		chatHistories[userId].push({ role: "user", content: question });
-		chatHistories[userId].push({ role: "assistant", content: responseText });
 
 		console.log(`Qwen response for ${userId}: "${String(responseText).substring(0, 80)}..."`);
 		return responseText;
