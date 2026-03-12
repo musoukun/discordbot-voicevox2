@@ -2,18 +2,28 @@ import { MessageFlags } from "discord.js";
 
 /**
  * interaction に初期応答を送る。
- * deferReply() が 40060 で常に失敗するため、reply() で直接応答する。
- * 失敗時は channel.send にフォールバック。
+ * reply() が 40060 で失敗した場合、既にacknowledgeされているので editReply で上書きする。
  */
 export async function safeDeferReply(interaction, secret = false) {
 	try {
-		const options = { content: "考え中..." };
+		const options = { content: "処理中..." };
 		if (secret) options.flags = MessageFlags.Ephemeral;
 		await interaction.reply(options);
+		console.log("[safeDeferReply] reply() succeeded");
 		return "editReply";
 	} catch (err) {
-		console.error("reply failed:", err.code, err.message);
-		// reply も失敗した場合は channel.send にフォールバック
+		console.error("[safeDeferReply] reply() failed:", err.code, err.message);
+		if (err.code === 40060) {
+			// 既にacknowledgeされている → editReplyで上書き可能
+			try {
+				await interaction.editReply({ content: "処理中..." });
+				console.log("[safeDeferReply] editReply() succeeded (40060 recovery)");
+				return "editReply";
+			} catch (editErr) {
+				console.error("[safeDeferReply] editReply() also failed:", editErr.code, editErr.message);
+			}
+		}
+		// 最終フォールバック
 		return secret ? "editReply" : "channelSend";
 	}
 }
