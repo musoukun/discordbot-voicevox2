@@ -14,7 +14,8 @@ export async function safeDeferReply(interaction, secret = false) {
 	} catch (err) {
 		console.error("[safeDeferReply] reply() failed:", err.code, err.message);
 		if (err.code === 40060) {
-			// 既にacknowledgeされている → editReplyで上書き可能
+			// 既にacknowledgeされている → discord.jsの内部状態を合わせてeditReplyで上書き
+			interaction.replied = true;
 			try {
 				await interaction.editReply({ content: "処理中..." });
 				console.log("[safeDeferReply] editReply() succeeded (40060 recovery)");
