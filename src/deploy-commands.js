@@ -117,6 +117,27 @@ export async function deployCommands(speakers = []) {
 				o.setName("question").setDescription("AIへの質問").setRequired(true)
 			),
 
+		// /g25f - Gemini 2.5 Flash テキスト回答（公開）
+		new SlashCommandBuilder()
+			.setName("g25f")
+			.setDescription("Gemini 2.5 Flashに質問します（テキスト回答のみ）")
+			.addStringOption((o) =>
+				o.setName("question").setDescription("AIへの質問").setRequired(true)
+			)
+			.addBooleanOption((o) =>
+				o.setName("search").setDescription("Google検索を使用するか")
+			),
+		// /g25fs - Gemini 2.5 Flash テキスト回答（自分のみ表示）
+		new SlashCommandBuilder()
+			.setName("g25fs")
+			.setDescription("Gemini 2.5 Flashに質問します（テキスト回答のみ、自分のみ表示）")
+			.addStringOption((o) =>
+				o.setName("question").setDescription("AIへの質問").setRequired(true)
+			)
+			.addBooleanOption((o) =>
+				o.setName("search").setDescription("Google検索を使用するか")
+			),
+
 		// /lvv - 退出
 		new SlashCommandBuilder()
 			.setName("lvv")

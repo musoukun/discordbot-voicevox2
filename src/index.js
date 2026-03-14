@@ -10,6 +10,7 @@ import { handleVVG } from "./commands/vvg.js";
 import { handleLVV } from "./commands/lvv.js";
 import { handleVVQ } from "./commands/vvq.js";
 import { handleQ35 } from "./commands/q35.js";
+import { handleG25F } from "./commands/g25f.js";
 import { fetchVoicevoxSpeakers, getSpeakers } from "./services/voicevox.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -77,6 +78,9 @@ client.on("interactionCreate", async (interaction) => {
 				break;
 			case "q35":
 				await handleQ35(interaction, { secret });
+				break;
+			case "g25f":
+				await handleG25F(interaction, { secret });
 				break;
 			case "lvv":
 				await handleLVV(interaction);
