@@ -2,6 +2,10 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
+// ユーザーごとの会話履歴（直近5往復まで保持）
+const MAX_HISTORY = 5;
+const chatHistories = new Map();
+
 function getFormattedDate() {
 	const now = new Date();
 	const pad = (n) => String(n).padStart(2, "0");
@@ -22,13 +26,19 @@ const SEARCH_PROMPT = `以下の指示に従って回答してください：
 6. 質問の繰り返しも不要です`;
 
 /**
- * AI応答を生成する（毎回独立した質問として処理）
+ * AI応答を生成する（ユーザーごとに直近5往復の会話履歴を保持）
  */
 export async function generateAIResponse(question, userId, useSearch = false) {
+	// ユーザーの会話履歴を取得（なければ初期化）
+	if (!chatHistories.has(userId)) {
+		chatHistories.set(userId, []);
+	}
+	const history = chatHistories.get(userId);
+
 	let responseText;
 
 	if (useSearch) {
-		// Google検索付きモード
+		// Google検索付きモード（履歴なし：検索は毎回独立）
 		const response = await ai.models.generateContent({
 			model: "gemini-2.5-flash",
 			contents: `${question}\n\n${SEARCH_PROMPT}`,
@@ -38,16 +48,29 @@ export async function generateAIResponse(question, userId, useSearch = false) {
 		});
 		responseText = response.text;
 	} else {
-		// 通常モード
+		// 通常モード（会話履歴付き）
 		const now = getFormattedDate();
+		const contents = [
+			...history,
+			{ role: "user", parts: [{ text: question }] },
+		];
 		const response = await ai.models.generateContent({
 			model: "gemini-2.5-flash",
-			contents: question,
+			contents,
 			config: {
 				systemInstruction: `${SYSTEM_PROMPT}\n現在の時刻: ${now}`,
 			},
 		});
 		responseText = response.text;
+	}
+
+	// 会話履歴に追加（直近MAX_HISTORY往復まで保持）
+	history.push(
+		{ role: "user", parts: [{ text: question }] },
+		{ role: "model", parts: [{ text: responseText }] }
+	);
+	while (history.length > MAX_HISTORY * 2) {
+		history.splice(0, 2);
 	}
 
 	console.log(`AI response for ${userId}: "${String(responseText).substring(0, 80)}..."`);
