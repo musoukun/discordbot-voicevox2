@@ -16,13 +16,12 @@ export async function safeDeferReply(interaction, secret = false) {
 			interaction.replied = true;
 			try {
 				await interaction.editReply({ content: "処理中..." });
-				return "editReply";
 			} catch {
-				// editReplyも失敗
+				// editReplyも失敗 — それでもeditReplyを使い続ける
 			}
 		}
-		// 最終フォールバック
-		return secret ? "editReply" : "channelSend";
+		// 常にeditReplyを使う（channelSendだと2重メッセージになるため）
+		return "editReply";
 	}
 }
 
@@ -30,8 +29,5 @@ export async function safeDeferReply(interaction, secret = false) {
  * safeDeferReply の結果に応じて返信する。
  */
 export async function safeReply(interaction, method, content) {
-	if (method === "channelSend") {
-		return interaction.channel.send(content);
-	}
 	return interaction.editReply({ content });
 }

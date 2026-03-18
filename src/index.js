@@ -22,6 +22,9 @@ export const voiceTmpPath = join(__dirname, "voiceTmp");
 // インタラクションキュー（同一ユーザーの並行コマンド防止）
 const interactionQueue = new Set();
 
+// インタラクションID重複防止（同一イベントの2重処理を防ぐ）
+const processedInteractions = new Set();
+
 const client = new Client({
 	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 });
@@ -46,6 +49,11 @@ client.once("ready", async () => {
 
 client.on("interactionCreate", async (interaction) => {
 	if (!interaction.isChatInputCommand()) return;
+
+	// 同一インタラクションの2重処理を防止
+	if (processedInteractions.has(interaction.id)) return;
+	processedInteractions.add(interaction.id);
+	setTimeout(() => processedInteractions.delete(interaction.id), 60_000);
 
 	const userId = interaction.user.id;
 
