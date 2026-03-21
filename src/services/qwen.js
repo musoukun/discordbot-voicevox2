@@ -60,7 +60,7 @@ function buildWorkflow(userPrompt, historyText) {
 				is_memory: "disable",
 				is_locked: "disable",
 				main_brain: "enable",
-				conversation_rounds: 0,
+				conversation_rounds: 1,
 				historical_record: "",
 				is_enable: true,
 				is_enable_system_role: "enable",
