@@ -52,7 +52,7 @@ export async function generateQwenResponse(question, userId) {
 	const messages = [
 		{ role: "system", content: `${SYSTEM_PROMPT}\n現在の時刻: ${now}` },
 		...history,
-		{ role: "user", content: question },
+		{ role: "user", content: question + "\n/no_think" },
 	];
 
 	activeRequests++;
@@ -63,6 +63,7 @@ export async function generateQwenResponse(question, userId) {
 				messages,
 				max_tokens: 2000,
 				temperature: 0.7,
+				chat_template_kwargs: { enable_thinking: false },
 			},
 			{ timeout: 180000 }
 		);
