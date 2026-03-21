@@ -12,6 +12,7 @@ import { handleVVQ } from "./commands/vvq.js";
 import { handleQ35 } from "./commands/q35.js";
 import { handleG25F } from "./commands/g25f.js";
 import { fetchVoicevoxSpeakers, getSpeakers } from "./services/voicevox.js";
+import { warmupQwen } from "./services/qwen.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +46,9 @@ client.once("ready", async () => {
 	await deployCommands(speakers);
 
 	console.log("Bot initialization complete.");
+
+	// ComfyUI LLMのCUDA graphウォームアップ（バックグラウンド）
+	warmupQwen();
 });
 
 client.on("interactionCreate", async (interaction) => {

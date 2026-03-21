@@ -34,8 +34,8 @@ const MODEL_PATH = process.env.COMFYUI_MODEL_PATH ||
  */
 function buildWorkflow(userPrompt, historyText) {
 	const fullUserPrompt = historyText
-		? `${historyText}\n\n現在の質問: ${userPrompt}`
-		: userPrompt;
+		? `${historyText}\n\n現在の質問: ${userPrompt}\n/no_think`
+		: `${userPrompt}\n/no_think`;
 
 	return {
 		"6": {
@@ -155,10 +155,17 @@ function extractText(historyEntry) {
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
  */
 function stripThinkingTags(text) {
-	// 閉じタグありの場合: <think>...</think> を除去
-	let result = text.replace(/<think>[\s\S]*?<\/think>/g, "");
-	// 閉じタグなしの場合: <think>以降をすべて除去
-	result = result.replace(/<think>[\s\S]*/g, "");
+	// </think> がある場合、その後のテキストだけを取得
+	const thinkEnd = text.lastIndexOf("</think>");
+	if (thinkEnd !== -1) {
+		return text.substring(thinkEnd + 8).trim();
+	}
+	// <think> のみで閉じてない場合は全て思考なので空
+	if (text.includes("<think>")) {
+		return "";
+	}
+	// Thinking Process: で始まる場合も除去
+	let result = text.replace(/Thinking Process:[\s\S]*$/g, "");
 	return result.trim();
 }
 
@@ -181,6 +188,21 @@ function formatHistory(history) {
 /**
  * Qwen (ComfyUI) でAI応答を生成する（ユーザーごとに直近5往復の会話履歴を保持）
  */
+/**
+ * 起動時にダミーリクエストを送ってCUDA graphウォームアップを済ませる
+ */
+export async function warmupQwen() {
+	try {
+		console.log("Qwen3.5 4B のウォームアップ中...");
+		const workflow = buildWorkflow("hi", "");
+		const promptId = await queuePrompt(workflow);
+		await pollHistory(promptId);
+		console.log("Qwen3.5 4B ウォームアップ完了!");
+	} catch (error) {
+		console.warn("Qwen3.5 4B ウォームアップ失敗 (ComfyUIが起動していない可能性):", error.message);
+	}
+}
+
 export async function generateQwenResponse(question, userId) {
 	// ユーザーの会話履歴を取得（なければ初期化）
 	if (!chatHistories.has(userId)) {
