@@ -22,36 +22,44 @@ function getFormattedDate() {
 	return `${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${pad(now.getHours())}時${pad(now.getMinutes())}分`;
 }
 
-const SYSTEM_PROMPT = `あなたは質問者の質問に日本語でこたえるアシスタントです。
-「了解しました」等の前置きを省き、直接結果だけを回答してください。
-質問を繰り返す必要はありません。`;
+// ComfyUIのワークフローAPIテンプレート（起動時に取得）
+let workflowTemplate = null;
+// user_promptを持つノードID
+let userPromptNodeId = null;
 
-const MODEL_PATH = process.env.COMFYUI_MODEL_PATH ||
-	"C:\\Users\\waros\\Downloads\\StabilityMatrix-win-x64\\Data\\Packages\\ComfyUI\\models\\LLM\\GGUF\\Qwen3.5-4B-Uncensored-HauhauCS-Aggressive-Q6_K.gguf";
+/**
+ * ComfyUIから最後に実行したワークフローを取得してテンプレートとして使う
+ * または手動でキャッシュされたワークフローを使用
+ */
+async function ensureWorkflowTemplate() {
+	if (workflowTemplate) return;
+	// ComfyUIのキューに空リクエストを送ってワークフロー構造を取得する代わりに
+	// /object_info からノード情報を取得し、最小ワークフローを構築
+	throw new Error("ワークフローテンプレートが未設定です。ComfyUIでワークフローを実行してからbotを起動してください。");
+}
 
 /**
  * ComfyUI APIワークフローを構築する
+ * ComfyUI側で設定済みのワークフローのuser_promptだけ差し替える
  */
 function buildWorkflow(userPrompt, historyText) {
 	const fullUserPrompt = historyText
 		? `${historyText}\n\n現在の質問: ${userPrompt}\n/no_think`
 		: `${userPrompt}\n/no_think`;
 
+	// テンプレートがあればそれを使う
+	if (workflowTemplate && userPromptNodeId) {
+		const wf = JSON.parse(JSON.stringify(workflowTemplate));
+		wf[userPromptNodeId].inputs.user_prompt = fullUserPrompt;
+		return wf;
+	}
+
+	// フォールバック: 最小構成のワークフロー
+	// ノード7のLLM_localにuser_promptだけ設定し、modelはComfyUI側のキャッシュに依存
 	return {
-		"6": {
-			class_type: "GGUFLoader",
-			inputs: {
-				model_path: MODEL_PATH,
-				max_ctx: 2048,
-				gpu_layers: 31,
-				n_threads: 4,
-				is_locked: true,
-			},
-		},
 		"7": {
 			class_type: "LLM_local",
 			inputs: {
-				model: ["6", 0],
 				system_prompt: "",
 				user_prompt: fullUserPrompt,
 				model_type: "LLM-GGUF",
@@ -73,6 +81,39 @@ function buildWorkflow(userPrompt, historyText) {
 			},
 		},
 	};
+}
+
+/**
+ * ComfyUIのhistoryから最新のワークフローを取得してテンプレートとして保存
+ */
+async function fetchWorkflowTemplate() {
+	try {
+		const { data: history } = await axios.get(
+			`${COMFYUI_URL}/history?max_items=1`,
+			{ timeout: 10000 }
+		);
+		const entries = Object.values(history);
+		if (entries.length > 0) {
+			const lastPrompt = entries[0].prompt;
+			if (lastPrompt && Array.isArray(lastPrompt) && lastPrompt.length >= 3) {
+				workflowTemplate = lastPrompt[2]; // prompt data is at index 2
+			} else if (lastPrompt && typeof lastPrompt === "object") {
+				workflowTemplate = lastPrompt;
+			}
+			if (workflowTemplate) {
+				// user_promptを持つノードを探す
+				for (const [nodeId, node] of Object.entries(workflowTemplate)) {
+					if (node.inputs && "user_prompt" in node.inputs) {
+						userPromptNodeId = nodeId;
+						break;
+					}
+				}
+				console.log(`ComfyUI ワークフローテンプレート取得完了 (user_prompt node: ${userPromptNodeId})`);
+			}
+		}
+	} catch (error) {
+		console.warn("ComfyUI ワークフローテンプレート取得失敗:", error.message);
+	}
 }
 
 /**
@@ -193,13 +234,19 @@ function formatHistory(history) {
  */
 export async function warmupQwen() {
 	try {
-		console.log("Qwen3.5 4B のウォームアップ中...");
-		const workflow = buildWorkflow("hi", "");
-		const promptId = await queuePrompt(workflow);
-		await pollHistory(promptId);
-		console.log("Qwen3.5 4B ウォームアップ完了!");
+		// ComfyUIのhistoryから最新ワークフローをテンプレートとして取得
+		await fetchWorkflowTemplate();
+		if (workflowTemplate) {
+			console.log("ComfyUI ウォームアップ中...");
+			const workflow = buildWorkflow("hi", "");
+			const promptId = await queuePrompt(workflow);
+			await pollHistory(promptId);
+			console.log("ComfyUI ウォームアップ完了!");
+		} else {
+			console.warn("ComfyUI ワークフローテンプレートが見つかりません。ComfyUIで一度ワークフローを実行してください。");
+		}
 	} catch (error) {
-		console.warn("Qwen3.5 4B ウォームアップ失敗 (ComfyUIが起動していない可能性):", error.message);
+		console.warn("ComfyUI ウォームアップ失敗 (ComfyUIが起動していない可能性):", error.message);
 	}
 }
 
