@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const KOBOLD_URL = process.env.KOBOLD_URL || "http://localhost:5001";
+const COMFYUI_URL = process.env.COMFYUI_URL || "http://localhost:8188";
 
 // 処理中リクエストの追跡
 let activeRequests = 0;
@@ -26,6 +26,124 @@ const SYSTEM_PROMPT = `あなたは質問者の質問に日本語でこたえる
 「了解しました」等の前置きを省き、直接結果だけを回答してください。
 質問を繰り返す必要はありません。`;
 
+const MODEL_PATH = process.env.COMFYUI_MODEL_PATH ||
+	"C:\\Users\\waros\\Downloads\\StabilityMatrix-win-x64\\Data\\Packages\\ComfyUI\\models\\LLM\\GGUF\\Qwen3.5-4B-Uncensored-HauhauCS-Aggressive-Q6_K.gguf";
+
+/**
+ * ComfyUI APIワークフローを構築する
+ */
+function buildWorkflow(userPrompt, systemPrompt, historyText) {
+	const fullUserPrompt = historyText
+		? `${historyText}\n\n現在の質問: ${userPrompt}`
+		: userPrompt;
+
+	return {
+		"6": {
+			class_type: "GGUFLoader",
+			inputs: {
+				model_path: MODEL_PATH,
+				max_ctx: 2048,
+				gpu_layers: 31,
+				n_threads: 4,
+				is_locked: true,
+			},
+		},
+		"7": {
+			class_type: "LLM_local",
+			inputs: {
+				model: ["6", 0],
+				system_prompt_input: systemPrompt,
+				system_prompt: "",
+				user_prompt: fullUserPrompt,
+				model_type: "LLM-GGUF",
+				temperature: 0.7,
+				max_length: 2000,
+				is_memory: "disable",
+				is_locked: "disable",
+				main_brain: "enable",
+				conversation_rounds: 0,
+				historical_record: "",
+				is_enable: true,
+				is_enable_system_role: "enable",
+			},
+		},
+		"9": {
+			class_type: "show_text_party",
+			inputs: {
+				text: ["7", 0],
+			},
+		},
+	};
+}
+
+/**
+ * ComfyUIにプロンプトをキューイングする
+ */
+async function queuePrompt(workflow) {
+	const { data } = await axios.post(
+		`${COMFYUI_URL}/prompt`,
+		{ prompt: workflow },
+		{ timeout: 10000 }
+	);
+	const nodeErrors = data.node_errors || {};
+	if (Object.keys(nodeErrors).length > 0) {
+		const msgs = Object.entries(nodeErrors)
+			.map(([nid, err]) => `Node ${nid}: ${err.errors?.map((e) => e.message).join("; ")}`)
+			.join(", ");
+		throw new Error(`ComfyUI validation error: ${msgs}`);
+	}
+	return data.prompt_id;
+}
+
+/**
+ * ComfyUI historyをポーリングして完了を待つ
+ */
+async function pollHistory(promptId, timeout = 300000) {
+	const start = Date.now();
+	while (Date.now() - start < timeout) {
+		const { data: history } = await axios.get(
+			`${COMFYUI_URL}/history/${promptId}`,
+			{ timeout: 10000 }
+		);
+		if (history[promptId]) {
+			const entry = history[promptId];
+			const status = entry.status || {};
+			if (status.completed) {
+				return entry;
+			}
+			if (status.status_str === "error") {
+				throw new Error(`ComfyUI execution error: ${JSON.stringify(status)}`);
+			}
+		}
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+	}
+	throw new Error(`ComfyUI timeout: ${promptId}`);
+}
+
+/**
+ * historyからテキスト出力を抽出する
+ */
+function extractText(historyEntry) {
+	const outputs = historyEntry.outputs || {};
+	for (const [, out] of Object.entries(outputs)) {
+		// show_text_party は text フィールドに結果を格納
+		if (out.text) {
+			if (Array.isArray(out.text)) {
+				return out.text.join("");
+			}
+			return String(out.text);
+		}
+		// ui.text パターン
+		if (out.ui?.text) {
+			if (Array.isArray(out.ui.text)) {
+				return out.ui.text.join("");
+			}
+			return String(out.ui.text);
+		}
+	}
+	throw new Error("ComfyUIの出力からテキストを取得できませんでした。");
+}
+
 /**
  * <think>...</think> タグを除去してGenerateされた回答のみを返す
  */
@@ -38,37 +156,44 @@ function stripThinkingTags(text) {
 }
 
 /**
- * Qwen (KoboldCpp) でAI応答を生成する（ユーザーごとに直近5往復の会話履歴を保持）
+ * 会話履歴をテキスト形式にフォーマットする
+ */
+function formatHistory(history) {
+	if (history.length === 0) return "";
+	let text = "これまでの会話:";
+	for (const msg of history) {
+		if (msg.role === "user") {
+			text += `\nユーザー: ${msg.content}`;
+		} else if (msg.role === "assistant") {
+			text += `\nアシスタント: ${msg.content}`;
+		}
+	}
+	return text;
+}
+
+/**
+ * Qwen (ComfyUI) でAI応答を生成する（ユーザーごとに直近5往復の会話履歴を保持）
  */
 export async function generateQwenResponse(question, userId) {
 	const now = getFormattedDate();
+	const systemPrompt = `${SYSTEM_PROMPT}\n現在の時刻: ${now}`;
 
 	// ユーザーの会話履歴を取得（なければ初期化）
 	if (!chatHistories.has(userId)) {
 		chatHistories.set(userId, []);
 	}
 	const history = chatHistories.get(userId);
+	const historyText = formatHistory(history);
 
-	const messages = [
-		{ role: "system", content: `${SYSTEM_PROMPT}\n現在の時刻: ${now}` },
-		...history,
-		{ role: "user", content: question + "\n/no_think" },
-	];
+	const workflow = buildWorkflow(question, systemPrompt, historyText);
 
 	activeRequests++;
 	try {
-		const { data } = await axios.post(
-			`${KOBOLD_URL}/v1/chat/completions`,
-			{
-				messages,
-				max_tokens: 2000,
-				temperature: 0.7,
-				chat_template_kwargs: { enable_thinking: false },
-			},
-			{ timeout: 180000 }
-		);
+		const promptId = await queuePrompt(workflow);
+		console.log(`ComfyUI queued: ${promptId}`);
 
-		const rawText = data.choices[0].message.content;
+		const entry = await pollHistory(promptId);
+		const rawText = extractText(entry);
 		const responseText = stripThinkingTags(rawText);
 
 		// 会話履歴に追加（直近MAX_HISTORY往復まで保持）
@@ -85,7 +210,7 @@ export async function generateQwenResponse(question, userId) {
 		return responseText;
 	} catch (error) {
 		if (error.code === "ECONNREFUSED") {
-			throw new Error("Qwen (KoboldCpp) が起動していません。");
+			throw new Error("ComfyUI が起動していません。");
 		}
 		throw error;
 	} finally {
