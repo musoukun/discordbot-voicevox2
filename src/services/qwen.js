@@ -32,7 +32,7 @@ const MODEL_PATH = process.env.COMFYUI_MODEL_PATH ||
 /**
  * ComfyUI APIワークフローを構築する
  */
-function buildWorkflow(userPrompt, systemPrompt, historyText) {
+function buildWorkflow(userPrompt, historyText) {
 	const fullUserPrompt = historyText
 		? `${historyText}\n\n現在の質問: ${userPrompt}`
 		: userPrompt;
@@ -52,7 +52,6 @@ function buildWorkflow(userPrompt, systemPrompt, historyText) {
 			class_type: "LLM_local",
 			inputs: {
 				model: ["6", 0],
-				system_prompt_input: systemPrompt,
 				system_prompt: "",
 				user_prompt: fullUserPrompt,
 				model_type: "LLM-GGUF",
@@ -80,17 +79,25 @@ function buildWorkflow(userPrompt, systemPrompt, historyText) {
  * ComfyUIにプロンプトをキューイングする
  */
 async function queuePrompt(workflow) {
-	const { data } = await axios.post(
-		`${COMFYUI_URL}/prompt`,
-		{ prompt: workflow },
-		{ timeout: 10000 }
-	);
-	const nodeErrors = data.node_errors || {};
-	if (Object.keys(nodeErrors).length > 0) {
-		const msgs = Object.entries(nodeErrors)
-			.map(([nid, err]) => `Node ${nid}: ${err.errors?.map((e) => e.message).join("; ")}`)
-			.join(", ");
-		throw new Error(`ComfyUI validation error: ${msgs}`);
+	let data;
+	try {
+		const resp = await axios.post(
+			`${COMFYUI_URL}/prompt`,
+			{ prompt: workflow },
+			{ timeout: 10000 }
+		);
+		data = resp.data;
+	} catch (error) {
+		if (error.response?.data) {
+			const errData = error.response.data;
+			console.error("ComfyUI API error:", JSON.stringify(errData, null, 2));
+			const nodeErrors = errData.node_errors || {};
+			const msgs = Object.entries(nodeErrors)
+				.map(([nid, err]) => `Node ${nid}: ${err.errors?.map((e) => e.details || e.message).join("; ")}`)
+				.join(", ");
+			throw new Error(`ComfyUI error: ${msgs || errData.error?.message || JSON.stringify(errData)}`);
+		}
+		throw error;
 	}
 	return data.prompt_id;
 }
@@ -175,9 +182,6 @@ function formatHistory(history) {
  * Qwen (ComfyUI) でAI応答を生成する（ユーザーごとに直近5往復の会話履歴を保持）
  */
 export async function generateQwenResponse(question, userId) {
-	const now = getFormattedDate();
-	const systemPrompt = `${SYSTEM_PROMPT}\n現在の時刻: ${now}`;
-
 	// ユーザーの会話履歴を取得（なければ初期化）
 	if (!chatHistories.has(userId)) {
 		chatHistories.set(userId, []);
@@ -185,7 +189,7 @@ export async function generateQwenResponse(question, userId) {
 	const history = chatHistories.get(userId);
 	const historyText = formatHistory(history);
 
-	const workflow = buildWorkflow(question, systemPrompt, historyText);
+	const workflow = buildWorkflow(question, historyText);
 
 	activeRequests++;
 	try {
@@ -194,7 +198,11 @@ export async function generateQwenResponse(question, userId) {
 
 		const entry = await pollHistory(promptId);
 		const rawText = extractText(entry);
-		const responseText = stripThinkingTags(rawText);
+		let responseText = stripThinkingTags(rawText);
+		// Discord表示用に1024文字で切る
+		if (responseText.length > 1024) {
+			responseText = responseText.substring(0, 1021) + "...";
+		}
 
 		// 会話履歴に追加（直近MAX_HISTORY往復まで保持）
 		history.push(
